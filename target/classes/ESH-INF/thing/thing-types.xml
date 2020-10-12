@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="cameraanalyzer"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<thing-type id="cameraanalyzer">
+		<label>Camera Analyzer Module</label>
+		<description>Reads events from Camera</description>
+
+		<channels>
+			<channel id="power" typeId="power"/>
+			<channel id="events" typeId="events"/>
+		</channels>
+
+		<config-description>
+			<parameter name="api_url" type="text">
+				<label>Camera Analyzer Api URL</label>
+				<description>Server</description>
+				<context>network-address</context>
+				<default>localhost:7171</default>
+			</parameter>
+			<parameter name="refresh" type="integer" unit="ms" min="500">
+				<label>Refresh Interval</label>
+				<description>Specifies the refresh interval in seconds.</description>
+				<default>1000</default>
+			</parameter>
+		</config-description>
+
+	</thing-type>
+
+	<channel-type id="power">
+		<item-type>Switch</item-type>
+		<label>Switch State</label>
+		<description>On/off status </description>
+		<category>Switch</category>
+	</channel-type>
+
+	<channel-type id="events">
+		<item-type>String</item-type>
+		<label>Camera Event</label>
+		<description>Camera Event from Camera Analyzer with area and datetime</description>
+		<state readOnly="true"/>
+	</channel-type>
+</thing:thing-descriptions>
