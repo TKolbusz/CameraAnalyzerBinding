@@ -22,5 +22,6 @@ public class CameraAnalyzerConfiguration {
     /**
      * Sample configuration parameter. Replace with your own.
      */
-    public String apiURL;
+    public String api_url;
+    public Long refresh;
 }

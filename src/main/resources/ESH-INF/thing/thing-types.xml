@@ -15,11 +15,11 @@
 
 		<config-description>
 			<parameter name="api_url" type="text">
-				<label>Camera Analyzer Api URL</label>
-				<description>Server</description>
-				<context>network-address</context>
-				<default>localhost:7171</default>
-			</parameter>
+                <label>Camera Analyzer Api URL</label>
+                <description>Server</description>
+                <context>network-address</context>
+                <default>localhost:5000</default>
+            </parameter>
 			<parameter name="refresh" type="integer" unit="ms" min="500">
 				<label>Refresh Interval</label>
 				<description>Specifies the refresh interval in seconds.</description>

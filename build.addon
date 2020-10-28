@@ -1,0 +1,4 @@
+mvn -Dspotless.check.skip=true -DskipChecks clean install -pl :org.openhab.binding.cameraanalyzer
+sudo cp /home/tom/.m2/repository/org/openhab/addons/bundles/org.openhab.binding.cameraanalyzer/2.5.10-SNAPSHOT/org.openhab.binding.cameraanalyzer-2.5.10-SNAPSHOT.jar /opt/openhab2/addons/
+sudo chmod 7777 /opt/openhab2/addons/org.openhab.binding.cameraanalyzer-2.5.10-SNAPSHOT.jar
+sudo chown openhab /opt/openhab2/addons/org.openhab.binding.cameraanalyzer-2.5.10-SNAPSHOT.jar

@@ -8,7 +8,7 @@ This bundle adds the following thing types:
 
 | Thing              | ThingTypeID | Description                                        |
 | ------------------ | ----------- | -------------------------------------------------- |
-| Camera Analyzer | cameraanalyzer | Camera Analyzer module                               |
+| Camera Analyzer | cameraanalyzer | Camera Analyzer Binding                            |
 
 ## Discovery
 
@@ -21,7 +21,7 @@ The following parameters are valid for all thing types:
 
 | Parameter | Type    | Required | Default if omitted | Description                                                                |
 | --------- | ------- | -------- | ------------------ | -------------------------------------------------------------------------- |
-| api_url   | string  | yes      | localhost:7171     | The api URL                                                                |
+| api_url   | string  | yes      | localhost:5000     | The api URL                                                                |
 | refresh   | integer | no       | 1000               | Poll interval in milliseconds. Increase this if you encounter connection errors |
 
 ## Channels
