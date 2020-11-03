@@ -25,8 +25,6 @@ import org.eclipse.smarthome.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -47,6 +45,7 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
     private @Nullable CameraAnalyzerConfiguration config;
     private Api api = new NotInitializedApi();
     private AtomicBoolean stop = new AtomicBoolean(false);
+    private @Nullable Thread runningThread = null;
 
     public CameraAnalyzerHandler(Thing thing) {
         super(thing);
@@ -60,27 +59,43 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
 
         updateStatus(ThingStatus.UNKNOWN);
         if (config.api_url != null && !config.api_url.isEmpty()) {
-            this.api = new Api(config.api_url);
-            new Thread(() -> {
-                stop.set(false);
-                long lastRequestAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
-                while (!stop.get()) {
+            this.api = new DelayedDuplicateEventApi(new ApiImpl(config.api_url), 5000);
+            if (runningThread == null) {
+                runningThread = new Thread(() -> {
+                    long refresh = getRefresh();
                     try {
-                        long requestAt = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
-                        List<CameraEvent> events = api.getEvents(lastRequestAt);
-                        for (CameraEvent event : events) {
-                            updateState(EVENT_CHANNEL, new StringType(event.toString()));
-                        }
-                        long sleepTime = getRefresh() - (LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) - requestAt);
-                        lastRequestAt = requestAt;
-                        if (sleepTime > 0)
-                            Thread.sleep(sleepTime);
-                    } catch (Exception e) {
-
+                        Thread.sleep(refresh);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                }
-            }).start();
+                    stop.set(false);
+                    long lastRequestAt = System.currentTimeMillis();
+                    while (!stop.get()) {
+                        try {
+                            long requestAt = System.currentTimeMillis();
+                            List<CameraEvent> events = api.getEvents(lastRequestAt);
+                            for (CameraEvent event : events) {
+                                updateState(EVENT_CHANNEL, new StringType(event.toString()));
+                            }
+                            long diff = refresh - (System.currentTimeMillis() - requestAt);
+                            long sleepTime = diff;
+                            lastRequestAt = requestAt;
+                            if (sleepTime > 0)
+                                Thread.sleep(sleepTime);
+                        } catch (Exception e) {
+                            updateStatus(ThingStatus.OFFLINE);
+                        }
+                    }
+                });
+                runningThread.start();
+            }
         }
+    }
+
+    @Override
+    public void dispose() {
+        stop.set(true);
+        runningThread = null;
     }
 
     private long getRefresh() {

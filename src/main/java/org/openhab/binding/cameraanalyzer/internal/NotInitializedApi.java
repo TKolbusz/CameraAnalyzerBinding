@@ -3,9 +3,8 @@ package org.openhab.binding.cameraanalyzer.internal;
 import java.util.Collections;
 import java.util.List;
 
-public class NotInitializedApi extends Api {
+public class NotInitializedApi implements Api {
     public NotInitializedApi() {
-        super(null);
     }
 
     @Override
