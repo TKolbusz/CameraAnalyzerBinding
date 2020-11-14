@@ -25,9 +25,11 @@ import org.eclipse.smarthome.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.Collections.emptyList;
 import static org.openhab.binding.cameraanalyzer.internal.CameraAnalyzerBindingConstants.EVENT_CHANNEL;
 import static org.openhab.binding.cameraanalyzer.internal.CameraAnalyzerBindingConstants.POWER_CHANNEL;
 
@@ -59,36 +61,58 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
 
         updateStatus(ThingStatus.UNKNOWN);
         if (config.api_url != null && !config.api_url.isEmpty()) {
-            this.api = new DelayedDuplicateEventApi(new ApiImpl(config.api_url), 5000);
+            this.api = new DistinctEventApiImpl(new DelayedDuplicateEventApi(new ApiImpl(config.api_url), 5000));
             if (runningThread == null) {
                 runningThread = new Thread(() -> {
                     long refresh = getRefresh();
-                    try {
-                        Thread.sleep(refresh);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    sleep(refresh);
                     stop.set(false);
-                    long lastRequestAt = System.currentTimeMillis();
+                    Long timeDiffBetweenServer = null;
+                    Long lastRequestAt = null;
                     while (!stop.get()) {
-                        try {
-                            long requestAt = System.currentTimeMillis();
-                            List<CameraEvent> events = api.getEvents(lastRequestAt);
-                            for (CameraEvent event : events) {
-                                updateState(EVENT_CHANNEL, new StringType(event.toString()));
+                        while (timeDiffBetweenServer == null) {
+                            try {
+                                long localTimeStart = System.currentTimeMillis();
+                                long serverTimeStart = getServerTime();
+                                timeDiffBetweenServer = localTimeStart - serverTimeStart + 1000;
+                            } catch (IOException e) {
+                                sleep(5000);
                             }
-                            long diff = refresh - (System.currentTimeMillis() - requestAt);
-                            long sleepTime = diff;
-                            lastRequestAt = requestAt;
-                            if (sleepTime > 0)
-                                Thread.sleep(sleepTime);
-                        } catch (Exception e) {
-                            updateStatus(ThingStatus.OFFLINE);
                         }
+                        if (lastRequestAt == null)
+                            lastRequestAt = System.currentTimeMillis();
+                        long requestAt = System.currentTimeMillis();
+                        try {
+                            List<CameraEvent> events = api.getEvents(lastRequestAt - timeDiffBetweenServer);
+                            updateState(events, null);
+                        } catch (IOException exception) {
+                            timeDiffBetweenServer = null;
+                            lastRequestAt = null;
+                            updateState(emptyList(), exception);
+                            continue;
+                        }
+                        long sleepTime = refresh - (System.currentTimeMillis() - requestAt);
+                        lastRequestAt = System.currentTimeMillis();
+                        if (sleepTime > 0)
+                            sleep(sleepTime);
                     }
                 });
                 runningThread.start();
             }
+        }
+    }
+
+    private long getServerTime() throws IOException {
+        return api.getTimestamp();
+    }
+
+    private void updateState(List<CameraEvent> events, @Nullable Exception e) {
+        if (e == null) {
+            for (CameraEvent event : events) {
+                updateState(EVENT_CHANNEL, new StringType(event.toString()));
+            }
+        } else {
+            updateStatus(CameraStatus.OFF);
         }
     }
 
@@ -130,5 +154,14 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
             updateState(POWER_CHANNEL, OnOffType.from(false));
             updateStatus(ThingStatus.UNKNOWN);
         }
+    }
+
+    private void sleep(long length) {
+        try {
+            Thread.sleep(length);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
     }
 }

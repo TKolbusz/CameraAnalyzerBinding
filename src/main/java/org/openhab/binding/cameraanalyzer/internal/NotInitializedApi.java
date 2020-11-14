@@ -1,5 +1,6 @@
 package org.openhab.binding.cameraanalyzer.internal;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -13,7 +14,7 @@ public class NotInitializedApi implements Api {
     }
 
     @Override
-    public List<CameraEvent> getEvents(long timestamp) {
+    public List<CameraEvent> getEvents(long dateFrom) {
         return Collections.emptyList();
     }
 
@@ -25,5 +26,10 @@ public class NotInitializedApi implements Api {
     @Override
     public CameraStatus turnOn() {
         return CameraStatus.UNKNOWN;
+    }
+
+    @Override
+    public long getTimestamp() throws IOException {
+        throw new IOException();
     }
 }

@@ -1,5 +1,6 @@
 package org.openhab.binding.cameraanalyzer.internal;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,8 +17,8 @@ public class DelayedDuplicateEventApi implements Api {
     }
 
     @Override
-    public List<CameraEvent> getEvents(long timestamp) {
-        List<CameraEvent> events = api.getEvents(timestamp);
+    public List<CameraEvent> getEvents(long dateFrom) throws IOException {
+        List<CameraEvent> events = api.getEvents(dateFrom);
         List<CameraEvent> eventResult = new ArrayList<>();
         for (CameraEvent event : events) {
             Long lastEventOfType = eventTimestampMap.get(event.getType());
@@ -33,6 +34,11 @@ public class DelayedDuplicateEventApi implements Api {
             }
         }
         return eventResult;
+    }
+
+    @Override
+    public long getTimestamp() throws IOException {
+        return api.getTimestamp();
     }
 
     @Override
