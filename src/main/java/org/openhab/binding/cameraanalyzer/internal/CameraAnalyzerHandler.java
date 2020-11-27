@@ -116,9 +116,14 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
 
     private void updateState(List<CameraEvent> events, @Nullable Exception e) {
         if (e == null) {
+            String lastEvent = null;
             for (CameraEvent event : events) {
-                updateState(EVENT_CHANNEL, new StringType(event.toString()));
+                String value = event.toString();
+                lastEvent = value;
+                updateState(EVENT_CHANNEL, new StringType(value));
             }
+            if (events.size() > 0)
+                updateState(EVENT_CHANNEL, new StringType(lastEvent + " - dispatched"));
             updateStatus(ThingStatus.ONLINE);
         } else {
             updateStatus(ThingStatus.OFFLINE);
