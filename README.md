@@ -19,10 +19,11 @@ This extension does not support autodiscovery. The things need to be added manua
 
 The following parameters are valid for all thing types:
 
-| Parameter | Type    | Required | Default if omitted | Description                                                                |
-| --------- | ------- | -------- | ------------------ | -------------------------------------------------------------------------- |
-| api_url   | string  | yes      | localhost:5000     | The api URL                                                                |
-| refresh   | integer | no       | 1000               | Poll interval in milliseconds. Increase this if you encounter connection errors |
+| Parameter         | Type    | Required | Default if omitted | Description                                                                |
+| ---------         | ------- | -------- | ------------------ | -------------------------------------------------------------------------- |
+| api_url           | string  | yes      | localhost:5000     | The api URL                                                                |
+| refresh           | integer | no       | 1000               | Poll interval in milliseconds. Increase this if you encounter connection errors |
+| duplicate_delay   | integer | no       | 5000               | Delay to skip duplicate events in milliseconds. |
 
 ## Channels
 

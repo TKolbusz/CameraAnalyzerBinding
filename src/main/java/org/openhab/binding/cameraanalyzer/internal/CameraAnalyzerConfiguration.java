@@ -24,4 +24,5 @@ public class CameraAnalyzerConfiguration {
      */
     public String api_url;
     public Long refresh;
+    public Long duplicate_delay;
 }

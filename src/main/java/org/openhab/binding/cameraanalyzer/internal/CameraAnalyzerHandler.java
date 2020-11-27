@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.util.Collections.emptyList;
@@ -61,7 +62,7 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
 
         updateStatus(ThingStatus.UNKNOWN);
         if (config.api_url != null && !config.api_url.isEmpty()) {
-            this.api = new DistinctEventApiImpl(new DelayedDuplicateEventApi(new ApiImpl(config.api_url), 5000));
+            this.api = createApi();
             if (runningThread == null) {
                 runningThread = new Thread(() -> {
                     long refresh = getRefresh();
@@ -70,7 +71,7 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
                     Long timeDiffBetweenServer = null;
                     Long lastRequestAt = null;
                     while (!stop.get()) {
-                        while (timeDiffBetweenServer == null) {
+                        while (timeDiffBetweenServer == null && !stop.get()) {
                             try {
                                 long localTimeStart = System.currentTimeMillis();
                                 long serverTimeStart = getServerTime();
@@ -79,6 +80,8 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
                                 sleep(5000);
                             }
                         }
+                        if (stop.get())
+                            break;
                         if (lastRequestAt == null)
                             lastRequestAt = System.currentTimeMillis();
                         long requestAt = System.currentTimeMillis();
@@ -86,6 +89,7 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
                             List<CameraEvent> events = api.getEvents(lastRequestAt - timeDiffBetweenServer);
                             updateState(events, null);
                         } catch (IOException exception) {
+                            api = createApi();
                             timeDiffBetweenServer = null;
                             lastRequestAt = null;
                             updateState(emptyList(), exception);
@@ -102,6 +106,10 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
         }
     }
 
+    private Api createApi() {
+        return new DistinctEventApiImpl(new DelayedDuplicateEventApi(new ApiImpl(config.api_url), getSameEventsDelay()));
+    }
+
     private long getServerTime() throws IOException {
         return api.getTimestamp();
     }
@@ -111,9 +119,24 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
             for (CameraEvent event : events) {
                 updateState(EVENT_CHANNEL, new StringType(event.toString()));
             }
+            updateStatus(ThingStatus.ONLINE);
         } else {
-            updateStatus(CameraStatus.OFF);
+            updateStatus(ThingStatus.OFFLINE);
         }
+    }
+
+    @Override
+    public void handleRemoval() {
+        super.handleRemoval();
+        stop.set(true);
+        runningThread = null;
+    }
+
+    @Override
+    public void handleConfigurationUpdate(Map<String, Object> configurationParameters) {
+        super.handleConfigurationUpdate(configurationParameters);
+        stop.set(true);
+        runningThread = null;
     }
 
     @Override
@@ -124,6 +147,10 @@ public class CameraAnalyzerHandler extends BaseThingHandler {
 
     private long getRefresh() {
         return config.refresh != null ? config.refresh : 1000;
+    }
+
+    private long getSameEventsDelay() {
+        return config.duplicate_delay != null ? config.duplicate_delay : 5000;
     }
 
     @Override
