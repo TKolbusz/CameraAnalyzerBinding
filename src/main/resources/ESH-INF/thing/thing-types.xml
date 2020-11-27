@@ -28,7 +28,7 @@
 			<parameter name="duplicate_delay" min="0" type="integer" unit="ms">
 				<default>5000</default>
 				<description>Specifies the delay after duplicate event.</description>
-				<label>Refresh Interval</label>
+				<label>Duplicate Event Delay</label>
 			</parameter>
 		</config-description>
 
